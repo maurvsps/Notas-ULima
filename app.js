@@ -730,3 +730,25 @@ loginBtn.addEventListener("click", async () => {
         alert(error.message);
     }
 });
+
+Object.assign(window, {
+    openSheet,
+    closeSheet,
+
+    openCreditsSheet,
+    saveCredits,
+
+    openAddCourseSheet,
+    addNewEvalRow,
+    saveNewCourse,
+
+    addEditEvalRow,
+    saveEdit,
+
+    saveNewCycle,
+
+    moveNewEv,
+    moveEditEv,
+
+    refreshCreditsPct
+});
