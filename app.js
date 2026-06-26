@@ -1,7 +1,8 @@
 import {
   auth,
   provider,
-  signInWithPopup
+  signInWithPopup,
+  onAuthStateChanged
 } from "./firebase.js";
 // ════════════════════════════════════════════════
 //  PALETTE & CONSTANTS
@@ -711,16 +712,21 @@ document.querySelectorAll('.overlay').forEach(o=>{
 // ════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════
-render();
 const loginBtn = document.getElementById("loginBtn");
 
-loginBtn.addEventListener("click", async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        loginBtn.textContent = user.displayName.split(" ")[0];
+    } else {
+        loginBtn.textContent = "👤";
+    }
+});
 
-    alert(`Bienvenido ${result.user.displayName}`);
-  } catch (e) {
-    console.error(e);
-    alert("No se pudo iniciar sesión.");
-  }
+loginBtn.addEventListener("click", async () => {
+    try {
+        await signInWithPopup(auth, provider);
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
 });
