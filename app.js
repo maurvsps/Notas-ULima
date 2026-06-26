@@ -1,4 +1,8 @@
-import { app } from "./firebase.js";
+import {
+  auth,
+  provider,
+  signInWithPopup
+} from "./firebase.js";
 // ════════════════════════════════════════════════
 //  PALETTE & CONSTANTS
 // ════════════════════════════════════════════════
@@ -708,3 +712,15 @@ document.querySelectorAll('.overlay').forEach(o=>{
 //  INIT
 // ════════════════════════════════════════════════
 render();
+const loginBtn = document.getElementById("loginBtn");
+
+loginBtn.addEventListener("click", async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+
+    alert(`Bienvenido ${result.user.displayName}`);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo iniciar sesión.");
+  }
+});
