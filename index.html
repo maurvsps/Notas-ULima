@@ -3,7 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Notas 2026-1 v2</title>
+<title>Notas ULIMA</title>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBX0SLElkX2gryepvNrR1koAMBtRbcod_Y",
+  authDomain: "notasulima-e4984.firebaseapp.com",
+  projectId: "notasulima-e4984",
+  storageBucket: "notasulima-e4984.firebasestorage.app",
+  messagingSenderId: "725701401423",
+  appId: "1:725701401423:web:487d61b6570ea6b00c433a"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// Expose to global scope for non-module script
+window._fbAuth = auth;
+window._fbDb   = db;
+window._fbDoc  = doc;
+window._fbGetDoc  = getDoc;
+window._fbSetDoc  = setDoc;
+window._fbSignOut = () => signOut(auth);
+window._fbSignIn  = (email, pass) => signInWithEmailAndPassword(auth, email, pass);
+window._fbSignUp  = (email, pass) => createUserWithEmailAndPassword(auth, email, pass);
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    // Load from Firestore
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) {
+        window._loadedState = snap.data().state;
+      }
+    } catch(e) { console.warn('Firestore load error', e); }
+    window._currentUser = user;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appRoot').style.display    = '';
+    document.getElementById('userEmailLabel').textContent = user.email;
+    window._appInit();
+  } else {
+    window._currentUser = null;
+    document.getElementById('authScreen').style.display = '';
+    document.getElementById('appRoot').style.display    = 'none';
+  }
+});
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -384,7 +436,65 @@ main { padding: 12px; padding-bottom: 80px; }
 .cswatch:active { transform: scale(0.9); }
 .cswatch.selected { border-color: rgba(255,255,255,0.7); transform: scale(1.12); }
 
-/* ── CREDITS SHEET ── */
+/* ── AUTH SCREEN ── */
+#authScreen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 24px;
+}
+.auth-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 380px;
+}
+.auth-logo { font-size: 28px; text-align: center; margin-bottom: 6px; }
+.auth-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+.auth-sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 24px; }
+.auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.auth-tab {
+  flex: 1; padding: 9px; background: transparent; border: none;
+  color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.auth-tab.active { background: var(--accent); color: #fff; }
+.auth-err { font-size: 12px; color: var(--red); text-align: center; min-height: 18px; margin-bottom: 10px; }
+.auth-btn {
+  width: 100%; padding: 12px; border-radius: 12px; border: none;
+  background: var(--accent); color: #fff; font-family: inherit;
+  font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 6px;
+  transition: opacity 0.15s;
+}
+.auth-btn:active { opacity: 0.8; }
+.auth-btn:disabled { opacity: 0.5; cursor: default; }
+.auth-or { text-align:center; color: var(--muted); font-size: 11px; margin: 14px 0; }
+.auth-guest-btn {
+  width: 100%; padding: 10px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--sub); font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.auth-guest-btn:active { background: var(--s3); }
+/* User badge in header */
+.user-badge {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.user-email-label {
+  font-size: 10px; color: var(--muted); max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.signout-btn {
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px; cursor: pointer; font-family: inherit;
+}
+.signout-btn:active { color: var(--red); border-color: var(--red); }
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
+  transition: background 0.3s; flex-shrink: 0;
+}
+.sync-dot.syncing { background: var(--yellow); }
+.sync-dot.synced  { background: var(--green); }
+.sync-dot.error   { background: var(--red); }
+
 .credits-config {
   padding: 14px 16px;
 }
@@ -419,9 +529,38 @@ main { padding: 12px; padding-bottom: 80px; }
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">📚</div>
+    <div class="auth-title">Notas ULIMA</div>
+    <div class="auth-sub">Tus notas sincronizadas en la nube</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+    <div class="field-label">Correo</div>
+    <input class="field-input" id="authEmail" type="email" placeholder="correo@ulima.edu.pe" autocomplete="email">
+    <div class="field-label">Contraseña</div>
+    <input class="field-input" id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" style="margin-bottom:6px">
+    <div class="auth-err" id="authErr"></div>
+    <button class="auth-btn" id="authSubmitBtn" onclick="submitAuth()">Iniciar sesión</button>
+    <div class="auth-or">— o continúa sin cuenta —</div>
+    <button class="auth-guest-btn" onclick="enterAsGuest()">Usar sin cuenta (solo local)</button>
+  </div>
+</div>
+
+<!-- APP ROOT -->
+<div id="appRoot" style="display:none">
+
 <header class="app-header">
   <div class="app-title">📚 Notas</div>
   <div class="cycle-chips" id="cycleChips"></div>
+  <div class="user-badge" id="userBadge" style="display:none">
+    <div class="sync-dot" id="syncDot" title="Estado de sincronización"></div>
+    <span class="user-email-label" id="userEmailLabel"></span>
+    <button class="signout-btn" onclick="doSignOut()">Salir</button>
+  </div>
   <button class="icon-btn" onclick="openSheet('addCycleSheet')" title="Nuevo ciclo">＋</button>
 </header>
 
@@ -557,6 +696,8 @@ main { padding: 12px; padding-bottom: 80px; }
   </div>
 </div>
 
+</div><!-- /appRoot -->
+
 <script>
 // ════════════════════════════════════════════════
 //  PALETTE & CONSTANTS
@@ -570,7 +711,8 @@ const PALETTE = [
 // ════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════
-let state = loadState() || {
+function defaultState() {
+  return {
   currentCycle: '2026-1',
   cycles: {
     '2026-1': {
@@ -619,10 +761,124 @@ let state = loadState() || {
       ]
     }
   }
+  };
+}
+
+let state = {};
+
+window._appInit = function() {
+  state = loadState() || defaultState();
+  // Show user badge if logged in
+  const badge = document.getElementById('userBadge');
+  if (window._currentUser) {
+    badge.style.display = 'flex';
+    setSyncDot('synced');
+  } else {
+    badge.style.display = 'none';
+  }
+  render();
 };
 
-function saveState() { try { localStorage.setItem('notas26v2', JSON.stringify(state)); } catch(e) {} }
-function loadState() { try { const s=localStorage.getItem('notas26v2'); return s?JSON.parse(s):null; } catch(e){return null;} }
+// ════════════════════════════════════════════════
+//  PERSISTENCE — localStorage + Firestore
+// ════════════════════════════════════════════════
+let _saveTimer = null;
+
+function saveState() {
+  // Always save locally
+  try { localStorage.setItem('notas26v2', JSON.stringify(state)); } catch(e) {}
+  // If logged in, debounce-sync to Firestore
+  if (window._currentUser) {
+    setSyncDot('syncing');
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(async () => {
+      try {
+        await window._fbSetDoc(
+          window._fbDoc(window._fbDb, 'users', window._currentUser.uid),
+          { state: JSON.parse(JSON.stringify(state)) }
+        );
+        setSyncDot('synced');
+      } catch(e) {
+        console.warn('Firestore save error', e);
+        setSyncDot('error');
+      }
+    }, 1200);
+  }
+}
+
+function loadState() {
+  // If Firebase loaded a cloud state, prefer that
+  if (window._loadedState) {
+    const s = window._loadedState;
+    window._loadedState = null;
+    return s;
+  }
+  try { const s=localStorage.getItem('notas26v2'); return s?JSON.parse(s):null; } catch(e){return null;}
+}
+
+function setSyncDot(status) {
+  const dot = document.getElementById('syncDot');
+  if (dot) dot.className = 'sync-dot ' + status;
+}
+
+// ════════════════════════════════════════════════
+//  AUTH HELPERS
+// ════════════════════════════════════════════════
+let _authMode = 'login';
+
+function switchAuthTab(mode) {
+  _authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabRegister').classList.toggle('active', mode==='register');
+  document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Iniciar sesión' : 'Crear cuenta';
+  document.getElementById('authErr').textContent = '';
+  document.getElementById('authPass').autocomplete = mode==='login' ? 'current-password' : 'new-password';
+}
+
+async function submitAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass  = document.getElementById('authPass').value;
+  const btn   = document.getElementById('authSubmitBtn');
+  const err   = document.getElementById('authErr');
+  if (!email||!pass) { err.textContent='Completa todos los campos.'; return; }
+  btn.disabled = true;
+  err.textContent = '';
+  try {
+    if (_authMode==='login') {
+      await window._fbSignIn(email, pass);
+    } else {
+      await window._fbSignUp(email, pass);
+    }
+  } catch(e) {
+    const msgs = {
+      'auth/invalid-email':'Correo inválido.',
+      'auth/user-not-found':'Usuario no encontrado.',
+      'auth/wrong-password':'Contraseña incorrecta.',
+      'auth/email-already-in-use':'El correo ya está registrado.',
+      'auth/weak-password':'La contraseña debe tener al menos 6 caracteres.',
+      'auth/invalid-credential':'Correo o contraseña incorrectos.',
+    };
+    err.textContent = msgs[e.code] || 'Error: ' + e.message;
+  } finally { btn.disabled = false; }
+}
+
+function enterAsGuest() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+  window._appInit();
+}
+
+function doSignOut() {
+  window._fbSignOut();
+  // Reset to default state on sign out
+  state = defaultState();
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('authScreen').style.display = '';
+}
+
+// Allow pressing Enter in auth fields
+document.getElementById('authEmail').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('authPass').focus(); });
+document.getElementById('authPass').addEventListener('keydown',  e=>{ if(e.key==='Enter') submitAuth(); });
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function courses() { return state.cycles[state.currentCycle]?.courses || []; }
 function cycleData() { return state.cycles[state.currentCycle] || {}; }
@@ -1264,9 +1520,8 @@ document.querySelectorAll('.overlay').forEach(o=>{
 });
 
 // ════════════════════════════════════════════════
-//  INIT
+//  INIT — triggered by Firebase onAuthStateChanged or enterAsGuest()
 // ════════════════════════════════════════════════
-render();
 </script>
 </body>
 </html>
